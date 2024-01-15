@@ -10,12 +10,11 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.shape import WD_INLINE_SHAPE
 from docx.enum.style import WD_STYLE_TYPE
-from docx.shared import Pt, RGBColor, Inches, Cm, Mm, Emu
+from docx.shared import Pt, RGBColor, Cm, Mm
 from docx.oxml.ns import nsdecls, qn
 
 install()
 
-# Configure logging
 logging.basicConfig(level=logging.INFO,
                     format="%(message)s",
                     handlers=[
@@ -36,6 +35,10 @@ REFERENCE_DOC = REFERENCE_DIR + '/refdoc.docx'
 Path(OUTPUT_DIR).mkdir(exist_ok=True)
 Path(INPUT_DIR).mkdir(exist_ok=True)
 Path(REFERENCE_DIR).mkdir(exist_ok=True)
+TOP_MARGIN = Cm(1)
+BOTTOM_MARGIN = Cm(1)
+LEFT_MARGIN = Cm(1)
+RIGHT_MARGIN = Cm(1)
 
 
 def convert_md_to_docx(file_path) -> Any:
@@ -106,13 +109,13 @@ def set_document_font(doc, font_name='Open Sans', font_size=Pt(10)) -> None:
         logger.error(f"Error setting document font: {e}", exc_info=True, stacklevel=2, stack_info=True)
 
 
-def autofit_tables_to_window(doc):
+def autofit_tables_to_window(doc) -> None:
     for table in doc.tables:
         table.autofit = False  # Disable autofit
         # Set table width to 100% of the page width
         tbl_width = parse_xml(r'<w:tblW {} w:w="5000" w:type="pct"/>'.format(nsdecls('w')))
         table._element.tblPr.append(tbl_width)
-        table.alignment = WD_TABLE_ALIGNMENT.CENTER  # Center-align the table
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
 
 def apply_custom_styles(doc) -> None:
@@ -138,10 +141,10 @@ def apply_custom_styles(doc) -> None:
 
 def post_process_docx(doc, output_file_path) -> None:
     try:
-        set_document_font(doc)  # Set the font for each run in the document
-        apply_custom_styles(doc)  # Apply custom styles to tables based on table headers
-        autofit_tables_to_window(doc)  # Autofit tables to window
-        doc.save(output_file_path)  # Save the document to the output file path
+        set_document_font(doc)
+        apply_custom_styles(doc)
+        autofit_tables_to_window(doc)
+        doc.save(output_file_path)
         logger.info("Post-processing completed and styles applied based on table headers.")
     except Exception as e:
         logger.error(f"Error applying styles to tables: {e}", exc_info=True, stacklevel=2, stack_info=True)
@@ -191,16 +194,14 @@ def style_cisco_table(table) -> None:
     style_table(table, cisco_header_fill, cisco_header_font_color, cisco_content_fill, cisco_content_font_color)
 
 
-def modify_styles(doc):
+def modify_styles(doc) -> None:
     logger.info(f"Document loaded from: {doc}")
     try:
-        # Check if 'Heading 1' style exists, if not, create it
         if 'Heading 1' not in doc.styles:
             h1 = doc.styles.add_style('Heading 1', WD_STYLE_TYPE.PARAGRAPH)
         else:
             h1 = doc.styles['Heading 1']
 
-        # Modify 'Heading 1' style
         h1.font.name = 'Arial'
         h1.font.size = Pt(16)
         h1.font.bold = True
@@ -211,7 +212,6 @@ def modify_styles(doc):
         else:
             h2 = doc.styles['Heading 2']
 
-        # Modify 'Heading 2' style
         h2.font.name = 'Times New Roman'
         h2.font.size = Pt(14)
         h2.font.bold = True
@@ -223,7 +223,6 @@ def modify_styles(doc):
         else:
             bt = doc.styles['Block Text']
 
-        # Modify 'Block Text' style
         bt.font.name = 'Times New Roman'
         bt.font.size = Pt(14)
         bt.font.bold = True
@@ -233,13 +232,7 @@ def modify_styles(doc):
         logger.error(f"Error modifying 'Heading 1' style: {e}")
 
 
-# def log_paragraph_properties(doc):
-#     for paragraph in doc.paragraphs:
-#         alignment = paragraph.paragraph_format.alignment
-#         logger.info(f"Paragraph alignment: {alignment}, Text: {paragraph.text[:30]}...")
-
-
-def set_margins(doc, top_cm, bottom_cm, left_cm, right_cm):
+def set_margins(doc, top_cm, bottom_cm, left_cm, right_cm) -> None:
     for section in doc.sections:
         section.top_margin = top_cm
         section.bottom_margin = bottom_cm
@@ -272,12 +265,11 @@ def set_margins(doc, top_cm, bottom_cm, left_cm, right_cm):
 
 def autofit_images_to_window(doc):
     # Define A4 size and margins
-    default_width = Mm(218)  # A4 width in mm
-    default_margin_left = Cm(1)  # Default left margin
-    default_margin_right = Cm(1)  # Default right margin
+    default_width = Mm(210)  # A4 width in mm
+    default_margin_left = Cm(1)
+    default_margin_right = Cm(1)
 
     for section in doc.sections:
-        # Check if section settings are present or use defaults
         page_width = section.page_width or default_width
         left_margin = section.left_margin or default_margin_left
         right_margin = section.right_margin or default_margin_right
@@ -294,28 +286,12 @@ def autofit_images_to_window(doc):
                 logger.info(f"Image resized to width: {new_width} EMUs, height: {new_height} EMUs")
 
 
-TOP_MARGIN = Cm(1)
-BOTTOM_MARGIN = Cm(1)
-LEFT_MARGIN = Cm(1)
-RIGHT_MARGIN = Cm(1)
-
-
-def print_section_margins(doc):
+def print_section_margins(doc) -> None:
     for section in doc.sections:
         logger.info(f"Top margin: {section.top_margin}")
         logger.info(f"Bottom margin: {section.bottom_margin}")
         logger.info(f"Left margin: {section.left_margin}")
         logger.info(f"Right margin: {section.right_margin}")
-
-
-def print_paragraph_formatting(doc):
-    for paragraph in doc.paragraphs:
-        logger.info(f"Paragraph alignment: {paragraph.alignment}")
-        logger.info(f"Left indent: {paragraph.paragraph_format.left_indent}")
-        logger.info(f"Right indent: {paragraph.paragraph_format.right_indent}")
-
-
-# Call this function after loading the document to check margins
 
 
 def main() -> None:
@@ -326,15 +302,13 @@ def main() -> None:
             logger.info(f'Processing Markdown file: {file_path}')
             docx_file_path = convert_md_to_docx(file_path)
             if docx_file_path:
-                doc = Document(docx_file_path)  # Open the DOCX file as a Document object
-                post_process_docx(doc, docx_file_path)  # Pass the Document object and the output file path
-                modify_styles(doc)  # Modify styles
-                # log_paragraph_properties(doc)  # Log paragraph properties
-                set_margins(doc, TOP_MARGIN, BOTTOM_MARGIN, LEFT_MARGIN, RIGHT_MARGIN)  # Set margins
-                autofit_images_to_window(doc)  # Autofit images to window
+                doc = Document(docx_file_path)
+                post_process_docx(doc, docx_file_path)
+                modify_styles(doc)
+                set_margins(doc, TOP_MARGIN, BOTTOM_MARGIN, LEFT_MARGIN, RIGHT_MARGIN)
+                autofit_images_to_window(doc)
                 print_section_margins(doc)
-                # print_paragraph_formatting(doc)
-                doc.save(docx_file_path)  # Save the changes to the DOCX file
+                doc.save(docx_file_path)
                 files_converted = True
     if not files_converted:
         logger.info("No files found.")
