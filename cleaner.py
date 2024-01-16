@@ -56,8 +56,8 @@ def process_markdown(data: str) -> str:
         data = data[:section_start] + updated_section + data[section_end:]
     data = re.sub(r"(Template)%.*?/", r"Template/", data)
     data = re.sub(r"(Template)/", r"input/CleanedTemplate/Images/", data)
-    data = re.sub(r"Untitled%20(\d+)", r"Untitled\1", data)  # New pattern to remove '%20' from untitled images
-    data = re.sub(r"\[Untitled\]", r"[]", data)  # New pattern to remove '[Untitled]' to '[]'
+    data = re.sub(r"Untitled%20(\d+)", r"Untitled\1", data)
+    data = re.sub(r"\[Untitled\]", r"[]", data)
     return data
 
 
