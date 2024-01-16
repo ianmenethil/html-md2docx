@@ -339,7 +339,8 @@ def main() -> None:
         if file_path.suffix == ".md":
             logger.info(f'Processing Markdown file: {file_path}')
             if (docx_file_path := docx.convert_md_to_docx(file_path)):
-                doc = Document(docx_file_path)
+                # doc = Document(docx_file_path)
+                doc = Document(str(docx_file_path))
                 docx.keep_sections_together(doc)  # Call to keep_sections_together
                 docx.post_process_docx(doc, docx_file_path)  # set_document_font, self.apply_custom_styles, self.autofit_tables_to_window
                 docx.add_page_break_before_section(doc, section_titles_with_breaks, ignore_toc=True)
