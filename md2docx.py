@@ -55,16 +55,18 @@ logger = logging.getLogger(__name__)
 
 class DocxProcessor:
 
-    def __init__(self, input_dir: str, output_dir: str, reference_dir: str, reference_doc: str):
+    def __init__(self, input_dir: str, output_dir: str, reference_dir: str, reference_doc: str) -> None:
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.reference_dir = Path(reference_dir)
         self.reference_doc = reference_doc
 
-    def convert_md_to_docx(self, file_path: Path) -> Any:
+    def convert_md_to_docx(self, file_path: Path) -> Path:
+        """Converts a Markdown file to a DOCX file using Pandoc.
+        Args:file_path (Path): The path to the Markdown file.
+        Returns:Path: The path to the converted DOCX file."""
         output_file = self.output_dir / f"{file_path.stem}.docx"
         pandoc_command = ["pandoc", str(file_path), "-o", str(output_file)]
-
         try:
             subprocess.run(pandoc_command, check=True)
             logger.info(f"Successfully converted {file_path} to {output_file}")
@@ -73,7 +75,9 @@ class DocxProcessor:
             logger.error(f"Error converting {file_path} to docx: {e}")
             return file_path
 
-    def keep_table_together(self, table) -> None:
+    def keep_table_together(self, table: Any) -> None:
+        """Modifies a table in a DOCX document to keep it together on a single page.
+        Args:table (Any): The table to be modified."""
         if tblPr := table._element.xpath('w:tblPr'):  # pylint: disable=protected-access
             tblKeep = OxmlElement('w:tblpPr')
             tblKeep.set(qn('w:keepLines'), "1")
@@ -82,22 +86,18 @@ class DocxProcessor:
     def keep_sections_together(self, doc) -> None:
         # Convert document to a single string for regex processing
         doc_text = '\n'.join([p.text for p in doc.paragraphs])
-
         # Find the TOC section using regular expressions
         start_marker = r"\s*# Table of Contents"
         end_marker = r"\n\n---"
         start_match = re.search(start_marker, doc_text)
         end_match = re.search(end_marker, doc_text[start_match.end():], re.MULTILINE) if start_match else None
-
         # Identify the range of the TOC section
         if start_match and end_match:
             toc_section_start = start_match.start()
             toc_section_end = start_match.end() + end_match.end()
-
             for paragraph in doc.paragraphs:
                 if toc_section_start <= paragraph._element.getparent().getparent().index(paragraph._element) <= toc_section_end:  # pylint: disable=protected-access
                     continue  # Skip paragraphs in the TOC section
-
                 if paragraph.text.startswith("2. AWS") or paragraph.text.startswith("3. WPEngine"):
                     run = paragraph.add_run()
                     run.add_break(WD_BREAK.PAGE)
@@ -107,23 +107,19 @@ class DocxProcessor:
             return
         # Convert document to a single string for regex processing
         doc_text = '\n'.join([p.text for p in doc.paragraphs])
-
         # Find the TOC section using regular expressions
         start_marker = r"\s*# Table of Contents"
         end_marker = r"\n\n---"
         start_match = re.search(start_marker, doc_text)
         end_match = re.search(end_marker, doc_text[start_match.end():], re.MULTILINE) if start_match else None
-
         # Identify the range of the TOC section
         if start_match and end_match:
             toc_section_start = start_match.start()
             toc_section_end = start_match.end() + end_match.end()
-
             # Process each paragraph
             for paragraph in doc.paragraphs:
                 if toc_section_start <= paragraph._element.getparent().getparent().index(paragraph._element) <= toc_section_end:  # pylint: disable=protected-access
                     continue  # Skip paragraphs in the TOC section
-
                 for title in section_titles:
                     if title in paragraph.text:
                         # Add a page break before this paragraph
@@ -232,7 +228,7 @@ class DocxProcessor:
             section.right_margin = right_cm
             # logger.info(f"Margins set to top: {top_cm}, bottom: {bottom_cm}, left: {left_cm}, right: {right_cm}")
 
-    def autofit_images_to_window(self, doc):
+    def autofit_images_to_window(self, doc) -> None:
         # Define A4 size and margins
         default_width = Mm(210)  # A4 width in mm
         default_margin_left = Cm(1)
