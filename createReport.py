@@ -1,8 +1,4 @@
-# This script will first run cleaner.py, wait for 1 second then run md2docx.py
-# it needs to have cli prints and error handling with rich logging
-
 import os
-import re
 from typing import Any
 from pathlib import Path
 import logging
@@ -38,24 +34,18 @@ def main() -> None:
     if not cleaner_script.exists():
         logger.error("Cleaner script does not exist.")
         return
-    # Check if the md2docx.py script exists
     md2docx_script = Path('md2docx.py')
     if not md2docx_script.exists():
         logger.error("MD2DOCX script does not exist.")
         return
-    # Run the cleaner.py script
     logger.info("Running cleaner.py script...")
     os.system('python cleaner.py')
-    # Wait for 1 second
     logger.info("Waiting for 1 second...")
     time.sleep(1)
-    # Run the md2docx.py script
     logger.info("Running md2docx.py script...")
     os.system('python md2docx.py')
-    # Wait for 1 second
     logger.info("Waiting for 1 second...")
     time.sleep(1)
-    # Check if the output directory contains any files
     logger.info("Report creation complete.")
 
 
